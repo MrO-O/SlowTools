@@ -23,6 +23,8 @@ npm run build
 npm run preview
 ```
 
+Windows 用户也可以直接双击 `start-slowtools.bat`：首次运行会安装依赖，随后启动本地服务并打开浏览器。保持打开的命令窗口即可继续运行；按 `Ctrl + C` 可停止服务。
+
 ## 新增工具
 
 1. 在 `src/tools/` 新建工具文件夹和 React 组件，例如 `src/tools/my-tool/MyTool.tsx`。
