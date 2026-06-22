@@ -49,6 +49,8 @@ $env:VITE_BASE_PATH='/SlowTools/'; npm run build
 
 随后将 `dist/` 作为 GitHub Pages 发布目录（或交给你偏好的简单 Actions 工作流）。如果部署在用户或组织主页根路径，则不设置 `VITE_BASE_PATH`。
 
+本仓库已包含 GitHub Actions 发布工作流：每次推送到 `master` 会构建并部署到 GitHub Pages。首次使用时，请在 GitHub 仓库的 **Settings → Pages → Build and deployment** 中将 Source 设置为 **GitHub Actions**。
+
 ## 当前本地数据
 
 Text Counter 会将输入内容自动保存在当前浏览器的 localStorage：
