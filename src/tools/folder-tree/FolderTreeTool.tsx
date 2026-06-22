@@ -3,6 +3,7 @@ import { readStoredText, writeStoredText } from '../../storage/localStorage'
 import {
   DEFAULT_EXCLUDED_NAMES,
   generateFolderTree,
+  generateFolderTreeFromFiles,
   parseExcludedNames,
   ScanCancelledError,
   type ScanProgress,
@@ -53,12 +54,15 @@ const emptyProgress: ScanProgress = { files: 0, directories: 0, totalEntries: 0 
 export function FolderTreeTool() {
   const [settings, setSettings] = useState<FolderTreeSettings>(getStoredSettings)
   const [directory, setDirectory] = useState<FileSystemDirectoryHandle | null>(null)
+  const [fallbackFiles, setFallbackFiles] = useState<File[]>([])
+  const [fallbackRootName, setFallbackRootName] = useState('')
   const [result, setResult] = useState('')
   const [progress, setProgress] = useState<ScanProgress>(emptyProgress)
   const [isScanning, setIsScanning] = useState(false)
   const [wasTruncated, setWasTruncated] = useState(false)
   const [message, setMessage] = useState('')
   const abortController = useRef<AbortController | null>(null)
+  const fallbackInput = useRef<HTMLInputElement | null>(null)
   const picker = (window as unknown as {
     showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>
   }).showDirectoryPicker
@@ -75,13 +79,16 @@ export function FolderTreeTool() {
 
   const chooseDirectory = async () => {
     if (!picker) {
-      setMessage('当前浏览器不支持直接选择文件夹。请使用 Chromium 系浏览器，或后续再添加 fallback。')
+      fallbackInput.current?.setAttribute('webkitdirectory', '')
+      fallbackInput.current?.click()
       return
     }
 
     try {
       const selectedDirectory = await picker()
       setDirectory(selectedDirectory)
+      setFallbackFiles([])
+      setFallbackRootName('')
       setMessage('')
     } catch (error) {
       if ((error as DOMException).name !== 'AbortError') {
@@ -90,8 +97,23 @@ export function FolderTreeTool() {
     }
   }
 
+  const chooseFallbackDirectory = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files ?? [])
+    if (!selectedFiles.length) {
+      return
+    }
+
+    const relativePath = selectedFiles[0].webkitRelativePath
+    const rootName = relativePath.split('/').filter(Boolean)[0] || 'selected-folder'
+    setDirectory(null)
+    setFallbackFiles(selectedFiles)
+    setFallbackRootName(rootName)
+    setMessage(`已选择 ${rootName}（兼容模式不会显示空文件夹）。`)
+    event.target.value = ''
+  }
+
   const startScan = async () => {
-    if (!directory) {
+    if (!directory && !fallbackFiles.length) {
       setMessage('请先选择一个本地文件夹。')
       return
     }
@@ -105,7 +127,7 @@ export function FolderTreeTool() {
     setMessage('正在扫描目录…')
 
     try {
-      const scanResult = await generateFolderTree(directory, {
+      const scanOptions = {
         maxDepth: Math.max(0, Math.min(50, Math.floor(settings.maxDepth) || 0)),
         maxEntries: Math.max(1, Math.min(100_000, Math.floor(settings.maxEntries) || 1)),
         excludedNames: parseExcludedNames(settings.excludedNames),
@@ -114,7 +136,10 @@ export function FolderTreeTool() {
         sortEntries: settings.sortEntries,
         signal: controller.signal,
         onProgress: setProgress,
-      })
+      }
+      const scanResult = directory
+        ? await generateFolderTree(directory, scanOptions)
+        : await generateFolderTreeFromFiles(fallbackFiles, fallbackRootName, scanOptions)
       setResult(scanResult.text)
       setProgress(scanResult.progress)
       setWasTruncated(scanResult.truncated)
@@ -163,18 +188,16 @@ export function FolderTreeTool() {
         </button>
       </div>
 
-      {!picker && (
-        <p className="tool-message is-warning">
-          当前浏览器不支持直接选择文件夹。请使用 Chromium 系浏览器，或后续再添加 fallback。
-        </p>
-      )}
+      {!picker && <p className="tool-message is-warning">当前浏览器使用兼容模式：可选择包含文件的文件夹，但空文件夹不会出现在目录树中。</p>}
+
+      <input ref={fallbackInput} className="visually-hidden" type="file" multiple onChange={chooseFallbackDirectory} />
 
       <div className="folder-tree-actions">
         <button className="primary-button" type="button" onClick={chooseDirectory} disabled={isScanning || !picker}>
           选择文件夹
         </button>
-        <span className="selected-directory">{directory ? directory.name : '尚未选择文件夹'}</span>
-        <button className="secondary-button" type="button" onClick={startScan} disabled={isScanning || !directory}>
+        <span className="selected-directory">{directory?.name || fallbackRootName || '尚未选择文件夹'}</span>
+        <button className="secondary-button" type="button" onClick={startScan} disabled={isScanning || (!directory && !fallbackFiles.length)}>
           开始生成
         </button>
         {isScanning && (
