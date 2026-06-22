@@ -193,7 +193,7 @@ export function FolderTreeTool() {
       <input ref={fallbackInput} className="visually-hidden" type="file" multiple onChange={chooseFallbackDirectory} />
 
       <div className="folder-tree-actions">
-        <button className="primary-button" type="button" onClick={chooseDirectory} disabled={isScanning || !picker}>
+        <button className="primary-button" type="button" onClick={chooseDirectory} disabled={isScanning}>
           选择文件夹
         </button>
         <span className="selected-directory">{directory?.name || fallbackRootName || '尚未选择文件夹'}</span>
