@@ -65,7 +65,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Forms */
 label { color: #526157; font-size: 0.82rem; font-weight: 700; }
 .tool-settings, .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
-.tool-settings--scan { grid-template-columns: minmax(190px, 0.8fr) repeat(2, minmax(0, 1fr)); }
+.tool-settings--scan { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .tool-settings > label, .form-grid > label { display: grid; gap: 7px; }
 .form-field--wide { grid-column: 1 / -1; }
 input:not([type="checkbox"]), select, textarea { width: 100%; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #27332d; }
@@ -91,7 +91,7 @@ textarea:focus, input:focus, select:focus { border-color: #63816b; outline: none
 .stats-grid dt { color: #728078; font-size: 0.76rem; }
 .stats-grid dd { margin: 5px 0 0; color: #304238; font-family: Georgia, "Times New Roman", serif; font-size: 1.75rem; }
 .result-textarea { min-height: 320px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.84rem; line-height: 1.55; }
-.batch-layout { display: grid; grid-template-columns: minmax(330px, 0.95fr) minmax(0, 1.35fr); gap: 18px; align-items: start; }
+.batch-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .batch-layout__controls, .batch-layout__results, .preview-stack { display: grid; gap: 18px; min-width: 0; }
 .empty-state { padding: 22px; border: 1px dashed #d5ddd4; border-radius: 10px; background: #f7f8f4; color: #718078; font-size: 0.86rem; line-height: 1.6; }
 .summary-pills span { padding: 5px 8px; color: #56665c; font-size: 0.78rem; }
@@ -107,10 +107,6 @@ textarea:focus, input:focus, select:focus { border-color: #63816b; outline: none
 .preview-table .status-risky { background: #fff9e9; }
 
 /* Responsive */
-@media (max-width: 980px) {
-  .batch-layout { grid-template-columns: 1fr; }
-}
-
 @media (max-width: 760px) {
   .app-shell { width: min(100% - 28px, 620px); padding-top: 18px; }
   .intro { padding: 47px 0 30px; }
