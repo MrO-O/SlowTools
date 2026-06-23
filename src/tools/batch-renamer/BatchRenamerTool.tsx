@@ -270,7 +270,7 @@ export function BatchRenamerTool() {
             <label>前缀<input value={settings.prefix} onChange={(event) => updateSetting('prefix', event.target.value)} /></label>
             <label>后缀<input value={settings.suffix} onChange={(event) => updateSetting('suffix', event.target.value)} /></label>
             <label>大小写<select value={settings.caseMode} onChange={(event) => updateSetting('caseMode', event.target.value as RenameRules['caseMode'])}><option value="keep">保留</option><option value="lower">统一小写</option><option value="upper">统一大写</option></select></label>
-            <label className="extension-scope">处理范围<span><input type="checkbox" checked={settings.modifyExtension} onChange={(event) => updateSetting('modifyExtension', event.target.checked)} />规则也作用于扩展名</span><small>默认只修改文件名；开启后文本、前后缀、大小写和编号也会处理扩展名。</small></label>
+            <label>处理范围<select value={settings.modifyExtension ? 'all' : 'name'} onChange={(event) => updateSetting('modifyExtension', event.target.value === 'all')}><option value="name">仅文件名</option><option value="all">文件名和扩展名</option></select></label>
           </div>
         </div>
 
@@ -278,7 +278,7 @@ export function BatchRenamerTool() {
           <h4>自动编号</h4>
           <div className="checkbox-row" role="group" aria-label="自动编号规则">
             <label><input type="checkbox" checked={settings.numberingEnabled} onChange={(event) => updateSetting('numberingEnabled', event.target.checked)} />启用自动编号</label>
-            {settings.numberingEnabled && <><label>起始数字<input type="number" value={settings.numberStart} onChange={(event) => updateSetting('numberStart', Number(event.target.value))} /></label><label>位数<input type="number" min="1" max="12" value={settings.numberPadding} onChange={(event) => updateSetting('numberPadding', Number(event.target.value))} /></label><label>插入位置<select value={settings.numberPosition} onChange={(event) => updateSetting('numberPosition', event.target.value as RenameRules['numberPosition'])}><option value="prefix">文件名前</option><option value="suffix">文件名后</option></select></label></>}
+            {settings.numberingEnabled && <><label>起始数字<input type="number" value={settings.numberStart} onChange={(event) => updateSetting('numberStart', Number(event.target.value))} /></label><label>位数<input type="number" min="1" max="12" value={settings.numberPadding} onChange={(event) => updateSetting('numberPadding', Number(event.target.value))} /></label><label className="number-field">插入位置<select value={settings.numberPosition} onChange={(event) => updateSetting('numberPosition', event.target.value as RenameRules['numberPosition'])}><option value="prefix">文件名前</option><option value="suffix">文件名后</option></select></label></>}
           </div>
         </div>
       </section>

@@ -110,12 +110,11 @@ textarea.folder-tree-result { min-height: 320px; resize: vertical; background: #
 .rules-grid label, .checkbox-row label { color: #526157; font-size: 0.82rem; }
 .rules-grid label { display: grid; gap: 7px; font-weight: 700; }
 .rules-grid input, .rules-grid select, .checkbox-row input[type="number"] { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #27332d; }
-.extension-scope > span { display: flex; align-items: center; gap: 7px; min-height: 38px; padding: 8px 10px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #405148; font-size: 0.84rem; font-weight: 500; }
-.extension-scope small { color: #718078; font-size: 0.75rem; font-weight: 500; line-height: 1.45; }
 .rename-rules .checkbox-row { margin-top: 15px; padding-top: 14px; border-top: 1px solid #e3e7e0; }
 .rule-group .checkbox-row { margin: 0; padding: 0; border: 0; }
 .rename-rules .checkbox-row label { font-weight: 500; }
 .rename-rules .checkbox-row label:has(input[type="number"]) { display: grid; min-width: 85px; }
+.rename-rules .checkbox-row label.number-field { display: grid; min-width: 105px; }
 .rename-rules .checkbox-row select { min-height: 34px; padding: 6px 8px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #27332d; }
 .renamer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 .execution-note { color: #8a5a32; font-size: 0.82rem; }
