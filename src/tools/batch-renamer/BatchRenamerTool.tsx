@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { StatusMessage } from '../../ui/StatusMessage'
+import { ToolHeader } from '../../ui/ToolHeader'
 import { readStoredText, writeStoredText } from '../../storage/localStorage'
 import { makeRenamePreview, summarizePreview } from './renameRules'
 import { DEFAULT_EXCLUDED_NAMES, parseExcludedNames, ScanCancelledError, scanDirectoryFiles, scanSelectedFiles } from './scanFiles'
 import { makeCsv, makeNodeScript, makePowerShellScript } from './scriptExport'
-import type { RenamePreviewItem, RenameRules, ScanProgress, ScannedFile } from './types'
+import { PreviewSection } from './PreviewSection'
+import { RenameRulesSection } from './RenameRulesSection'
+import { SourceSection } from './SourceSection'
+import type { RenamerSettings, RenamePreviewItem, ScanProgress, ScannedFile } from './types'
 
 const settingsKey = 'slowtools:batch-renamer:settings'
-
-interface RenamerSettings extends RenameRules {
-  recursive: boolean
-  maxDepth: number
-  maxEntries: number
-  excludedNames: string
-}
 
 const defaultSettings: RenamerSettings = {
   recursive: false,
@@ -71,7 +69,6 @@ export function BatchRenamerTool() {
   const [message, setMessage] = useState('')
   const [scanWarning, setScanWarning] = useState('')
   const abortController = useRef<AbortController | null>(null)
-  const filesInput = useRef<HTMLInputElement | null>(null)
   const directoryPicker = (window as unknown as { showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker
 
   useEffect(() => {
@@ -80,40 +77,40 @@ export function BatchRenamerTool() {
 
   useEffect(() => () => abortController.current?.abort(), [])
 
-  const updateSetting = <Key extends keyof RenamerSettings>(key: Key, value: RenamerSettings[Key]) => {
+  const updateSetting = (key: keyof RenamerSettings, value: RenamerSettings[keyof RenamerSettings]) => {
     setSettings((current) => ({ ...current, [key]: value }))
   }
 
+  const summary = useMemo(() => summarizePreview(preview), [preview])
   const canDirectRename = useMemo(() => !scanWarning.includes('扫描已截断') && preview.some((item) => item.status === 'ready') && preview
     .filter((item) => item.status === 'ready')
     .every((item) => typeof (item.handle as MovableFileHandle | undefined)?.move === 'function' && item.parentHandle), [preview, scanWarning])
-  const summary = useMemo(() => summarizePreview(preview), [preview])
+
+  const resetScanResult = () => {
+    setScannedFiles([])
+    setPreview([])
+    setProgress(emptyProgress)
+    setScanWarning('')
+  }
 
   const clearAll = () => {
     abortController.current?.abort()
     setDirectory(null)
     setSelectedFiles([])
     setSourceName('')
-    setScannedFiles([])
-    setPreview([])
-    setProgress(emptyProgress)
+    resetScanResult()
     setMessage('')
-    setScanWarning('')
   }
 
   const selectDirectory = async () => {
-    if (!directoryPicker) {
-      setMessage('当前浏览器不支持直接选择文件夹。请使用“选择文件列表”，或在 Chromium 系浏览器中选择文件夹。')
-      return
-    }
+    if (!directoryPicker) return
     try {
       const selected = await directoryPicker()
       setDirectory(selected)
       setSelectedFiles([])
       setSourceName(selected.name)
-      setScannedFiles([])
-      setPreview([])
-      setMessage('文件夹已选择，点击“扫描文件”后生成规则预览。')
+      resetScanResult()
+      setMessage('文件夹已选择，可以开始扫描。')
     } catch (error) {
       if ((error as DOMException).name !== 'AbortError') {
         setMessage('无法选择文件夹。请确认浏览器已授予访问权限后重试。')
@@ -121,17 +118,13 @@ export function BatchRenamerTool() {
     }
   }
 
-  const selectFiles = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
-    if (!files.length) return
+  const selectFiles = (files: File[]) => {
     const root = files[0].webkitRelativePath.split('/').filter(Boolean)[0]
     setDirectory(null)
     setSelectedFiles(files)
     setSourceName(root || `${files.length} 个文件`)
-    setScannedFiles([])
-    setPreview([])
-    setMessage('文件列表已选择，点击“扫描文件”后生成规则预览。')
-    event.target.value = ''
+    resetScanResult()
+    setMessage('文件列表已选择，可以开始扫描。')
   }
 
   const scanFiles = async () => {
@@ -183,9 +176,7 @@ export function BatchRenamerTool() {
     const nextPreview = makeRenamePreview(scannedFiles, settings)
     setPreview(nextPreview)
     const nextSummary = summarizePreview(nextPreview)
-    setMessage(nextSummary.ready
-      ? `已生成预览：${nextSummary.ready} 项可用于安全脚本导出。`
-      : '已生成预览，但没有可安全重命名的文件。请检查规则和风险提示。')
+    setMessage(nextSummary.ready ? `已生成预览：${nextSummary.ready} 项可用于安全脚本导出。` : '已生成预览，但没有可安全重命名的文件。请检查规则和风险提示。')
   }
 
   const runDirectRename = async () => {
@@ -216,96 +207,53 @@ export function BatchRenamerTool() {
   }
 
   return (
-    <div className="tool-panel batch-renamer-panel">
-      <div className="tool-panel-heading">
-        <div>
-          <span className="eyebrow">文件工具</span>
-          <h2>Batch File Renamer</h2>
-          <p>先预览和检查风险，再选择直接重命名或导出本地脚本。不会上传或读取文件内容。</p>
-        </div>
-        <button className="clear-button" type="button" onClick={clearAll} disabled={isScanning || isRenaming}>清空</button>
+    <div className="tool-panel batch-renamer">
+      <ToolHeader
+        eyebrow="文件工具"
+        title="Batch File Renamer"
+        description="先预览和检查风险，再选择直接重命名或导出本地脚本。不会上传或读取文件内容。"
+        actions={<button className="button button--quiet" type="button" onClick={clearAll} disabled={isScanning || isRenaming}>清空</button>}
+      />
+
+      <div className="tool-status-area" aria-live="polite">
+        {isScanning && <StatusMessage>正在扫描：文件 {progress.files}，文件夹 {progress.directories}，共 {progress.totalEntries} 项。</StatusMessage>}
+        {scanWarning && <StatusMessage tone="warning">{scanWarning}</StatusMessage>}
+        {message && <StatusMessage tone="info">{message}</StatusMessage>}
       </div>
 
-      <input ref={filesInput} className="visually-hidden" type="file" multiple onChange={selectFiles} />
-      <div className="folder-tree-actions">
-        <button className="primary-button" type="button" onClick={selectDirectory} disabled={isScanning || isRenaming || !directoryPicker}>选择文件夹</button>
-        <button className="secondary-button" type="button" onClick={() => filesInput.current?.click()} disabled={isScanning || isRenaming}>选择文件列表</button>
-        <span className="selected-directory">{sourceName || '尚未选择输入'}</span>
-        <button className="secondary-button" type="button" onClick={scanFiles} disabled={isScanning || isRenaming || (!directory && !selectedFiles.length)}>扫描文件</button>
-        {isScanning && <button className="secondary-button" type="button" onClick={() => abortController.current?.abort()}>取消扫描</button>}
+      <div className="batch-layout">
+        <div className="batch-layout__controls">
+          <SourceSection
+            settings={settings}
+            sourceName={sourceName}
+            canChooseDirectory={Boolean(directoryPicker)}
+            isScanning={isScanning}
+            isRenaming={isRenaming}
+            canScan={Boolean(directory || selectedFiles.length)}
+            onChooseDirectory={selectDirectory}
+            onFilesSelected={selectFiles}
+            onScan={scanFiles}
+            onCancel={() => abortController.current?.abort()}
+            onSettingChange={updateSetting}
+          />
+          <RenameRulesSection settings={settings} onSettingChange={updateSetting} />
+        </div>
+
+        <div className="batch-layout__results">
+          <PreviewSection
+            preview={preview}
+            summary={summary}
+            canGenerate={Boolean(scannedFiles.length) && !isScanning}
+            canDirectRename={canDirectRename}
+            isRenaming={isRenaming}
+            onGenerate={generatePreview}
+            onDirectRename={runDirectRename}
+            onExportPowerShell={() => download(makePowerShellScript(preview), 'slowtools-rename.ps1')}
+            onExportNode={() => download(makeNodeScript(preview), 'slowtools-rename.mjs')}
+            onExportCsv={() => download(makeCsv(preview), 'slowtools-rename-map.csv', 'text/csv;charset=utf-8')}
+          />
+        </div>
       </div>
-      {!directoryPicker && <p className="tool-message is-warning">当前浏览器不支持直接选择文件夹。可选择多个文件生成预览；如需扫描文件夹，请使用 Chromium 系浏览器。</p>}
-
-      <div className="folder-settings renamer-settings">
-        <label><input type="checkbox" checked={settings.recursive} onChange={(event) => updateSetting('recursive', event.target.checked)} />递归扫描子文件夹</label>
-        <label>最大深度<input type="number" min="1" max="20" value={settings.maxDepth} onChange={(event) => updateSetting('maxDepth', Number(event.target.value))} /></label>
-        <label>最大条目数<input type="number" min="1" max="100000" step="100" value={settings.maxEntries} onChange={(event) => updateSetting('maxEntries', Number(event.target.value))} /></label>
-        <label className="excluded-field">排除目录（逗号或换行分隔）<textarea rows={2} value={settings.excludedNames} onChange={(event) => updateSetting('excludedNames', event.target.value)} /></label>
-      </div>
-
-      <section className="rename-rules" aria-labelledby="rename-rules-title">
-        <div className="rules-heading"><h3 id="rename-rules-title">重命名规则</h3><p>修改规则不会改动文件；请先生成预览。</p></div>
-
-        <div className="rule-group">
-          <h4>文本匹配</h4>
-          <div className="rules-grid">
-            <label>匹配模式<select value={settings.matchMode} onChange={(event) => updateSetting('matchMode', event.target.value as RenameRules['matchMode'])}><option value="literal">普通文本（替换所有出现位置）</option><option value="wildcard">通配符（匹配整个文件名）</option></select></label>
-            <label>查找内容<input value={settings.findText} placeholder={settings.matchMode === 'wildcard' ? settings.modifyExtension ? '例如：report-*.txt' : '例如：report-*' : '例如：draft'} onChange={(event) => updateSetting('findText', event.target.value)} /></label>
-            <label>替换为<input value={settings.replaceText} placeholder="留空即删除匹配内容" onChange={(event) => updateSetting('replaceText', event.target.value)} /></label>
-          </div>
-          <p className="rule-help">普通文本会替换所有匹配内容。通配符会匹配当前处理范围（默认仅文件名）；只支持 <code>*</code>（任意文本）和 <code>?</code>（一个字符），不支持正则表达式。</p>
-        </div>
-
-        <div className="rule-group">
-          <h4>空格规范化</h4>
-          <div className="checkbox-row" role="group" aria-label="空格规则">
-            <label><input type="checkbox" checked={settings.trimExtraSpaces} onChange={(event) => updateSetting('trimExtraSpaces', event.target.checked)} />先清理首尾空格，并合并连续空白</label>
-            <label>再将空格输出为<select value={settings.spaceMode} onChange={(event) => updateSetting('spaceMode', event.target.value as RenameRules['spaceMode'])}><option value="keep">保留空格</option><option value="underscore">下划线</option><option value="hyphen">连字符</option></select></label>
-          </div>
-        </div>
-
-        <div className="rule-group">
-          <h4>附加与格式</h4>
-          <div className="rules-grid">
-            <label>前缀<input value={settings.prefix} onChange={(event) => updateSetting('prefix', event.target.value)} /></label>
-            <label>后缀<input value={settings.suffix} onChange={(event) => updateSetting('suffix', event.target.value)} /></label>
-            <label>大小写<select value={settings.caseMode} onChange={(event) => updateSetting('caseMode', event.target.value as RenameRules['caseMode'])}><option value="keep">保留</option><option value="lower">统一小写</option><option value="upper">统一大写</option></select></label>
-            <label>处理范围<select value={settings.modifyExtension ? 'all' : 'name'} onChange={(event) => updateSetting('modifyExtension', event.target.value === 'all')}><option value="name">仅文件名</option><option value="all">文件名和扩展名</option></select></label>
-          </div>
-        </div>
-
-        <div className="rule-group">
-          <h4>自动编号</h4>
-          <div className="checkbox-row" role="group" aria-label="自动编号规则">
-            <label><input type="checkbox" checked={settings.numberingEnabled} onChange={(event) => updateSetting('numberingEnabled', event.target.checked)} />启用自动编号</label>
-            {settings.numberingEnabled && <><label>起始数字<input type="number" value={settings.numberStart} onChange={(event) => updateSetting('numberStart', Number(event.target.value))} /></label><label>位数<input type="number" min="1" max="12" value={settings.numberPadding} onChange={(event) => updateSetting('numberPadding', Number(event.target.value))} /></label><label className="number-field">插入位置<select value={settings.numberPosition} onChange={(event) => updateSetting('numberPosition', event.target.value as RenameRules['numberPosition'])}><option value="prefix">文件名前</option><option value="suffix">文件名后</option></select></label></>}
-          </div>
-        </div>
-      </section>
-
-      <div className="scan-status" aria-live="polite"><span>文件 {progress.files}</span><span>文件夹 {progress.directories}</span><span>已扫描 {progress.totalEntries} 项</span></div>
-      {scanWarning && <p className="tool-message is-warning">{scanWarning}</p>}
-      {message && <p className="tool-message">{message}</p>}
-
-      <div className="renamer-actions">
-        <button className="secondary-button" type="button" onClick={generatePreview} disabled={!scannedFiles.length || isScanning || isRenaming}>生成预览</button>
-        {canDirectRename ? <button className="primary-button" type="button" onClick={runDirectRename} disabled={isRenaming}>确认并直接重命名</button> : <span className="execution-note">当前环境只能导出脚本；不会在浏览器中假装完成重命名。</span>}
-        <button className="text-button" type="button" onClick={() => download(makePowerShellScript(preview), 'slowtools-rename.ps1')} disabled={!preview.length}>导出 PowerShell</button>
-        <button className="text-button" type="button" onClick={() => download(makeNodeScript(preview), 'slowtools-rename.mjs')} disabled={!preview.length}>导出 Node.js</button>
-        <button className="text-button" type="button" onClick={() => download(makeCsv(preview), 'slowtools-rename-map.csv', 'text/csv;charset=utf-8')} disabled={!preview.length}>导出 CSV</button>
-      </div>
-
-      {preview.length > 0 && <>
-        <div className="preview-summary">
-          <span>可执行 {summary.ready}</span><span>未变化 {summary.unchanged}</span><span>冲突 {summary.conflict}</span><span>重复 {summary.duplicate}</span><span>非法 {summary.invalid}</span><span>风险 {summary.risky}</span>
-        </div>
-        <div className="preview-table-wrap">
-          <table className="preview-table">
-            <thead><tr><th>旧路径</th><th>旧文件名</th><th>新文件名</th><th>状态</th></tr></thead>
-            <tbody>{preview.map((item) => <tr key={item.id} className={`status-${item.status}`}><td>{item.path}</td><td>{item.name}</td><td>{item.newName || '—'}{item.notes.length > 0 && <small>{item.notes.join(' ')}</small>}</td><td>{item.executed === 'success' ? '已完成' : item.executed === 'failed' ? '失败' : item.status}</td></tr>)}</tbody>
-          </table>
-        </div>
-      </>}
     </div>
   )
 }

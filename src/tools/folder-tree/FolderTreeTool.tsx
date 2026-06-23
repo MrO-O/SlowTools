@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { ActionBar } from '../../ui/ActionBar'
+import { StatusMessage } from '../../ui/StatusMessage'
+import { ToolHeader } from '../../ui/ToolHeader'
+import { ToolSection } from '../../ui/ToolSection'
 import { readStoredText, writeStoredText } from '../../storage/localStorage'
 import {
   DEFAULT_EXCLUDED_NAMES,
@@ -176,81 +180,43 @@ export function FolderTreeTool() {
   }
 
   return (
-    <div className="tool-panel folder-tree-panel">
-      <div className="tool-panel-heading">
-        <div>
-          <span className="eyebrow">文件工具</span>
-          <h2>Folder Tree Generator</h2>
-          <p>从本地文件夹生成目录树。不上传文件，也不会读取文件内容。</p>
-        </div>
-        <button className="clear-button" type="button" onClick={clearResult} disabled={!result && !isScanning}>
-          清空结果
-        </button>
-      </div>
-
-      {!picker && <p className="tool-message is-warning">当前浏览器使用兼容模式：可选择包含文件的文件夹，但空文件夹不会出现在目录树中。</p>}
-
-      <input ref={fallbackInput} className="visually-hidden" type="file" multiple onChange={chooseFallbackDirectory} />
-
-      <div className="folder-tree-actions">
-        <button className="primary-button" type="button" onClick={chooseDirectory} disabled={isScanning}>
-          选择文件夹
-        </button>
-        <span className="selected-directory">{directory?.name || fallbackRootName || '尚未选择文件夹'}</span>
-        <button className="secondary-button" type="button" onClick={startScan} disabled={isScanning || (!directory && !fallbackFiles.length)}>
-          开始生成
-        </button>
-        {isScanning && (
-          <button className="secondary-button" type="button" onClick={() => abortController.current?.abort()}>
-            取消扫描
-          </button>
-        )}
-      </div>
-
-      <div className="folder-settings">
-        <label>
-          最大深度
-          <input type="number" min="0" max="50" value={settings.maxDepth} onChange={(event) => updateSetting('maxDepth', Number(event.target.value))} />
-        </label>
-        <label>
-          最大条目数
-          <input type="number" min="1" max="100000" step="100" value={settings.maxEntries} onChange={(event) => updateSetting('maxEntries', Number(event.target.value))} />
-        </label>
-        <label className="excluded-field">
-          排除目录（按名称，用逗号或换行分隔）
-          <textarea rows={3} value={settings.excludedNames} onChange={(event) => updateSetting('excludedNames', event.target.value)} />
-        </label>
-        <div className="checkbox-row" role="group" aria-label="扫描选项">
-          <label><input type="checkbox" checked={settings.includeFiles} onChange={(event) => updateSetting('includeFiles', event.target.checked)} />显示文件</label>
-          <label><input type="checkbox" checked={settings.includeHidden} onChange={(event) => updateSetting('includeHidden', event.target.checked)} />显示隐藏文件</label>
-          <label><input type="checkbox" checked={settings.sortEntries} onChange={(event) => updateSetting('sortEntries', event.target.checked)} />按名称排序</label>
-        </div>
-      </div>
-
-      <div className="scan-status" aria-live="polite">
-        <span>文件 {progress.files}</span>
-        <span>文件夹 {progress.directories}</span>
-        <span>已扫描 {progress.totalEntries} 项</span>
-        {wasTruncated && <strong>已截断</strong>}
-      </div>
-      {message && <p className="tool-message">{message}</p>}
-
-      <div className="result-heading">
-        <label htmlFor="folder-tree-result">目录树结果</label>
-        <div>
-          <button className="text-button" type="button" onClick={copyResult} disabled={!result}>复制</button>
-          <button className="text-button" type="button" onClick={() => makeDownload(result, 'txt')} disabled={!result}>下载 .txt</button>
-          <button className="text-button" type="button" onClick={() => makeDownload(result, 'md')} disabled={!result}>下载 .md</button>
-        </div>
-      </div>
-      <textarea
-        id="folder-tree-result"
-        className="folder-tree-result"
-        value={result}
-        readOnly
-        rows={16}
-        placeholder="选择文件夹后，目录树会显示在这里。"
+    <div className="tool-panel">
+      <ToolHeader
+        eyebrow="文件工具"
+        title="Folder Tree Generator"
+        description="从本地文件夹生成目录树。不上传文件，也不会读取文件内容。"
+        actions={<button className="button button--quiet" type="button" onClick={clearResult} disabled={!result && !isScanning}>清空结果</button>}
       />
+
+      <div className="tool-status-area">
+        {!picker && <StatusMessage tone="warning">当前浏览器使用兼容模式：可选择包含文件的文件夹，但空文件夹不会出现在目录树中。</StatusMessage>}
+        {message && <StatusMessage>{message}</StatusMessage>}
+      </div>
+
+      <ToolSection title="来源与扫描" description="选择本地文件夹后，设置扫描范围并生成目录树。">
+        <input ref={fallbackInput} className="visually-hidden" type="file" multiple onChange={chooseFallbackDirectory} />
+        <ActionBar>
+          <button className="button button--primary" type="button" onClick={chooseDirectory} disabled={isScanning}>选择文件夹</button>
+          <span className="selection-label">{directory?.name || fallbackRootName || '尚未选择文件夹'}</span>
+          <button className="button" type="button" onClick={startScan} disabled={isScanning || (!directory && !fallbackFiles.length)}>开始生成</button>
+          {isScanning && <button className="button" type="button" onClick={() => abortController.current?.abort()}>取消扫描</button>}
+        </ActionBar>
+        <div className="tool-settings">
+          <label>最大深度<input type="number" min="0" max="50" value={settings.maxDepth} onChange={(event) => updateSetting('maxDepth', Number(event.target.value))} /></label>
+          <label>最大条目数<input type="number" min="1" max="100000" step="100" value={settings.maxEntries} onChange={(event) => updateSetting('maxEntries', Number(event.target.value))} /></label>
+          <label className="form-field--wide">排除目录（按名称，用逗号或换行分隔）<textarea rows={3} value={settings.excludedNames} onChange={(event) => updateSetting('excludedNames', event.target.value)} /></label>
+          <div className="inline-fields" role="group" aria-label="扫描选项">
+            <label className="toggle-field"><input type="checkbox" checked={settings.includeFiles} onChange={(event) => updateSetting('includeFiles', event.target.checked)} />显示文件</label>
+            <label className="toggle-field"><input type="checkbox" checked={settings.includeHidden} onChange={(event) => updateSetting('includeHidden', event.target.checked)} />显示隐藏文件</label>
+            <label className="toggle-field"><input type="checkbox" checked={settings.sortEntries} onChange={(event) => updateSetting('sortEntries', event.target.checked)} />按名称排序</label>
+          </div>
+        </div>
+        <div className="summary-pills" aria-live="polite"><span>文件 {progress.files}</span><span>文件夹 {progress.directories}</span><span>已扫描 {progress.totalEntries} 项</span>{wasTruncated && <span>已截断</span>}</div>
+      </ToolSection>
+
+      <ToolSection title="目录树结果" description={result ? '复制或下载当前目录树。' : '生成结果会显示在这里。'} actions={<ActionBar><button className="button" type="button" onClick={copyResult} disabled={!result}>复制</button><button className="button" type="button" onClick={() => makeDownload(result, 'txt')} disabled={!result}>下载 .txt</button><button className="button" type="button" onClick={() => makeDownload(result, 'md')} disabled={!result}>下载 .md</button></ActionBar>}>
+        <textarea id="folder-tree-result" className="result-textarea" value={result} readOnly rows={16} placeholder="选择文件夹后，目录树会显示在这里。" />
+      </ToolSection>
     </div>
   )
 }

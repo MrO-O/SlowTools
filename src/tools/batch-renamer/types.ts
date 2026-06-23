@@ -31,6 +31,13 @@ export interface RenameRules {
   numberPosition: 'prefix' | 'suffix'
 }
 
+export interface RenamerSettings extends RenameRules {
+  recursive: boolean
+  maxDepth: number
+  maxEntries: number
+  excludedNames: string
+}
+
 export interface RenamePreviewItem extends ScannedFile {
   newName: string
   newPath: string
