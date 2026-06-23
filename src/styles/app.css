@@ -95,7 +95,7 @@ textarea.folder-tree-result { min-height: 320px; resize: vertical; background: #
 
 .batch-renamer-panel { display: grid; gap: 20px; }
 .batch-renamer-panel .tool-panel-heading { margin-bottom: 4px; }
-.renamer-settings { align-items: end; }
+.renamer-settings { grid-template-columns: minmax(210px, 0.8fr) repeat(2, minmax(0, 1fr)); align-items: end; }
 .renamer-settings > label:first-child { display: flex; align-items: center; gap: 7px; padding-bottom: 10px; font-weight: 500; }
 .rename-rules { padding: 18px; border: 1px solid #e0e4dc; border-radius: 14px; }
 .rules-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 18px; padding-bottom: 14px; }
@@ -110,6 +110,8 @@ textarea.folder-tree-result { min-height: 320px; resize: vertical; background: #
 .rules-grid label, .checkbox-row label { color: #526157; font-size: 0.82rem; }
 .rules-grid label { display: grid; gap: 7px; font-weight: 700; }
 .rules-grid input, .rules-grid select, .checkbox-row input[type="number"] { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #27332d; }
+.extension-scope > span { display: flex; align-items: center; gap: 7px; min-height: 38px; padding: 8px 10px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #405148; font-size: 0.84rem; font-weight: 500; }
+.extension-scope small { color: #718078; font-size: 0.75rem; font-weight: 500; line-height: 1.45; }
 .rename-rules .checkbox-row { margin-top: 15px; padding-top: 14px; border-top: 1px solid #e3e7e0; }
 .rule-group .checkbox-row { margin: 0; padding: 0; border: 0; }
 .rename-rules .checkbox-row label { font-weight: 500; }
@@ -137,5 +139,6 @@ textarea.folder-tree-result { min-height: 320px; resize: vertical; background: #
   .tool-detail { min-height: 0; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .folder-settings { grid-template-columns: 1fr; }
+  .renamer-settings { grid-template-columns: 1fr; }
   .rules-grid { grid-template-columns: 1fr; }
 }

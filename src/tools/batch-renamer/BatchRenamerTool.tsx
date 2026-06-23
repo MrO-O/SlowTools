@@ -270,8 +270,8 @@ export function BatchRenamerTool() {
             <label>前缀<input value={settings.prefix} onChange={(event) => updateSetting('prefix', event.target.value)} /></label>
             <label>后缀<input value={settings.suffix} onChange={(event) => updateSetting('suffix', event.target.value)} /></label>
             <label>大小写<select value={settings.caseMode} onChange={(event) => updateSetting('caseMode', event.target.value as RenameRules['caseMode'])}><option value="keep">保留</option><option value="lower">统一小写</option><option value="upper">统一大写</option></select></label>
+            <label className="extension-scope">处理范围<span><input type="checkbox" checked={settings.modifyExtension} onChange={(event) => updateSetting('modifyExtension', event.target.checked)} />规则也作用于扩展名</span><small>默认只修改文件名；开启后文本、前后缀、大小写和编号也会处理扩展名。</small></label>
           </div>
-          <div className="checkbox-row"><label><input type="checkbox" checked={settings.modifyExtension} onChange={(event) => updateSetting('modifyExtension', event.target.checked)} />同时修改扩展名（默认保留扩展名不变）</label></div>
         </div>
 
         <div className="rule-group">
