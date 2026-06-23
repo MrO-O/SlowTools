@@ -19,9 +19,9 @@ const defaultSettings: RenamerSettings = {
   maxDepth: 3,
   maxEntries: 10_000,
   excludedNames: DEFAULT_EXCLUDED_NAMES.join(', '),
+  matchMode: 'literal',
   findText: '',
   replaceText: '',
-  removeText: '',
   spaceMode: 'keep',
   trimExtraSpaces: true,
   prefix: '',
@@ -228,7 +228,7 @@ export function BatchRenamerTool() {
 
       <input ref={filesInput} className="visually-hidden" type="file" multiple onChange={selectFiles} />
       <div className="folder-tree-actions">
-        <button className="primary-button" type="button" onClick={selectDirectory} disabled={isScanning || isRenaming}>选择文件夹</button>
+        <button className="primary-button" type="button" onClick={selectDirectory} disabled={isScanning || isRenaming || !directoryPicker}>选择文件夹</button>
         <button className="secondary-button" type="button" onClick={() => filesInput.current?.click()} disabled={isScanning || isRenaming}>选择文件列表</button>
         <span className="selected-directory">{sourceName || '尚未选择输入'}</span>
         <button className="secondary-button" type="button" onClick={scanFiles} disabled={isScanning || isRenaming || (!directory && !selectedFiles.length)}>扫描文件</button>
@@ -244,22 +244,42 @@ export function BatchRenamerTool() {
       </div>
 
       <section className="rename-rules" aria-labelledby="rename-rules-title">
-        <div className="section-heading"><h3 id="rename-rules-title">重命名规则</h3><span>仅预览</span></div>
-        <div className="rules-grid">
-          <label>查找文本<input value={settings.findText} onChange={(event) => updateSetting('findText', event.target.value)} /></label>
-          <label>替换为<input value={settings.replaceText} onChange={(event) => updateSetting('replaceText', event.target.value)} /></label>
-          <label>删除文本<input value={settings.removeText} onChange={(event) => updateSetting('removeText', event.target.value)} /></label>
-          <label>空格处理<select value={settings.spaceMode} onChange={(event) => updateSetting('spaceMode', event.target.value as RenameRules['spaceMode'])}><option value="keep">保留</option><option value="underscore">替换为下划线</option><option value="hyphen">替换为连字符</option></select></label>
-          <label>前缀<input value={settings.prefix} onChange={(event) => updateSetting('prefix', event.target.value)} /></label>
-          <label>后缀<input value={settings.suffix} onChange={(event) => updateSetting('suffix', event.target.value)} /></label>
-          <label>大小写<select value={settings.caseMode} onChange={(event) => updateSetting('caseMode', event.target.value as RenameRules['caseMode'])}><option value="keep">保留</option><option value="lower">统一小写</option><option value="upper">统一大写</option></select></label>
-          <label>编号位置<select value={settings.numberPosition} onChange={(event) => updateSetting('numberPosition', event.target.value as RenameRules['numberPosition'])}><option value="prefix">前缀</option><option value="suffix">后缀</option></select></label>
+        <div className="rules-heading"><h3 id="rename-rules-title">重命名规则</h3><p>修改规则不会改动文件；请先生成预览。</p></div>
+
+        <div className="rule-group">
+          <h4>文本匹配</h4>
+          <div className="rules-grid">
+            <label>匹配模式<select value={settings.matchMode} onChange={(event) => updateSetting('matchMode', event.target.value as RenameRules['matchMode'])}><option value="literal">普通文本（替换所有出现位置）</option><option value="wildcard">通配符（匹配整个文件名）</option></select></label>
+            <label>查找内容<input value={settings.findText} placeholder={settings.matchMode === 'wildcard' ? settings.modifyExtension ? '例如：report-*.txt' : '例如：report-*' : '例如：draft'} onChange={(event) => updateSetting('findText', event.target.value)} /></label>
+            <label>替换为<input value={settings.replaceText} placeholder="留空即删除匹配内容" onChange={(event) => updateSetting('replaceText', event.target.value)} /></label>
+          </div>
+          <p className="rule-help">普通文本会替换所有匹配内容。通配符会匹配当前处理范围（默认仅文件名）；只支持 <code>*</code>（任意文本）和 <code>?</code>（一个字符），不支持正则表达式。</p>
         </div>
-        <div className="checkbox-row" role="group" aria-label="重命名规则选项">
-          <label><input type="checkbox" checked={settings.trimExtraSpaces} onChange={(event) => updateSetting('trimExtraSpaces', event.target.checked)} />删除多余空格</label>
-          <label><input type="checkbox" checked={settings.modifyExtension} onChange={(event) => updateSetting('modifyExtension', event.target.checked)} />同时修改扩展名</label>
-          <label><input type="checkbox" checked={settings.numberingEnabled} onChange={(event) => updateSetting('numberingEnabled', event.target.checked)} />自动编号</label>
-          {settings.numberingEnabled && <><label>起始数字<input type="number" value={settings.numberStart} onChange={(event) => updateSetting('numberStart', Number(event.target.value))} /></label><label>位数<input type="number" min="1" max="12" value={settings.numberPadding} onChange={(event) => updateSetting('numberPadding', Number(event.target.value))} /></label></>}
+
+        <div className="rule-group">
+          <h4>空格规范化</h4>
+          <div className="checkbox-row" role="group" aria-label="空格规则">
+            <label><input type="checkbox" checked={settings.trimExtraSpaces} onChange={(event) => updateSetting('trimExtraSpaces', event.target.checked)} />先清理首尾空格，并合并连续空白</label>
+            <label>再将空格输出为<select value={settings.spaceMode} onChange={(event) => updateSetting('spaceMode', event.target.value as RenameRules['spaceMode'])}><option value="keep">保留空格</option><option value="underscore">下划线</option><option value="hyphen">连字符</option></select></label>
+          </div>
+        </div>
+
+        <div className="rule-group">
+          <h4>附加与格式</h4>
+          <div className="rules-grid">
+            <label>前缀<input value={settings.prefix} onChange={(event) => updateSetting('prefix', event.target.value)} /></label>
+            <label>后缀<input value={settings.suffix} onChange={(event) => updateSetting('suffix', event.target.value)} /></label>
+            <label>大小写<select value={settings.caseMode} onChange={(event) => updateSetting('caseMode', event.target.value as RenameRules['caseMode'])}><option value="keep">保留</option><option value="lower">统一小写</option><option value="upper">统一大写</option></select></label>
+          </div>
+          <div className="checkbox-row"><label><input type="checkbox" checked={settings.modifyExtension} onChange={(event) => updateSetting('modifyExtension', event.target.checked)} />同时修改扩展名（默认保留扩展名不变）</label></div>
+        </div>
+
+        <div className="rule-group">
+          <h4>自动编号</h4>
+          <div className="checkbox-row" role="group" aria-label="自动编号规则">
+            <label><input type="checkbox" checked={settings.numberingEnabled} onChange={(event) => updateSetting('numberingEnabled', event.target.checked)} />启用自动编号</label>
+            {settings.numberingEnabled && <><label>起始数字<input type="number" value={settings.numberStart} onChange={(event) => updateSetting('numberStart', Number(event.target.value))} /></label><label>位数<input type="number" min="1" max="12" value={settings.numberPadding} onChange={(event) => updateSetting('numberPadding', Number(event.target.value))} /></label><label>插入位置<select value={settings.numberPosition} onChange={(event) => updateSetting('numberPosition', event.target.value as RenameRules['numberPosition'])}><option value="prefix">文件名前</option><option value="suffix">文件名后</option></select></label></>}
+          </div>
         </div>
       </section>
 

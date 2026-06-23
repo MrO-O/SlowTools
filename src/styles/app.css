@@ -98,15 +98,23 @@ textarea.folder-tree-result { min-height: 320px; resize: vertical; background: #
 .renamer-settings { align-items: end; }
 .renamer-settings > label:first-child { display: flex; align-items: center; gap: 7px; padding-bottom: 10px; font-weight: 500; }
 .rename-rules { padding: 18px; border: 1px solid #e0e4dc; border-radius: 14px; }
-.rename-rules .section-heading { padding: 0 0 12px; }
-.rename-rules h3 { margin: 0; font-size: 0.95rem; }
+.rules-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 18px; padding-bottom: 14px; }
+.rules-heading h3 { margin: 0; font-size: 0.95rem; }
+.rules-heading p, .rule-help { margin: 0; color: #718078; font-size: 0.78rem; line-height: 1.5; }
+.rule-group { padding: 16px 0; border-top: 1px solid #e3e7e0; }
+.rule-group h4 { margin: 0 0 12px; color: #44554b; font-size: 0.84rem; }
+.rule-group:last-child { padding-bottom: 0; }
+.rule-help { margin-top: 9px; }
+.rule-help code { padding: 1px 4px; border-radius: 4px; background: #edf1ea; color: #4b6656; }
 .rules-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
 .rules-grid label, .checkbox-row label { color: #526157; font-size: 0.82rem; }
 .rules-grid label { display: grid; gap: 7px; font-weight: 700; }
 .rules-grid input, .rules-grid select, .checkbox-row input[type="number"] { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #27332d; }
 .rename-rules .checkbox-row { margin-top: 15px; padding-top: 14px; border-top: 1px solid #e3e7e0; }
+.rule-group .checkbox-row { margin: 0; padding: 0; border: 0; }
 .rename-rules .checkbox-row label { font-weight: 500; }
 .rename-rules .checkbox-row label:has(input[type="number"]) { display: grid; min-width: 85px; }
+.rename-rules .checkbox-row select { min-height: 34px; padding: 6px 8px; border: 1px solid #d1d9d1; border-radius: 8px; background: #fffefa; color: #27332d; }
 .renamer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 .execution-note { color: #8a5a32; font-size: 0.82rem; }
 .preview-summary { display: flex; flex-wrap: wrap; gap: 8px; }

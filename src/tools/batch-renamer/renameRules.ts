@@ -12,14 +12,28 @@ function splitFileName(name: string) {
   return { stem: name.slice(0, lastDot), extension: name.slice(lastDot) }
 }
 
+function wildcardToRegExp(pattern: string): RegExp {
+  const escaped = pattern
+    .split(/([*?])/u)
+    .map((part) => {
+      if (part === '*') return '.*'
+      if (part === '?') return '.'
+      return part.replace(/[|\\{}()[\]^$+?.]/gu, '\\$&')
+    })
+    .join('')
+  return new RegExp(`^${escaped}$`, 'u')
+}
+
+function applyTextReplacement(value: string, rules: RenameRules): string {
+  if (!rules.findText) return value
+  if (rules.matchMode === 'literal') {
+    return value.split(rules.findText).join(rules.replaceText)
+  }
+  return wildcardToRegExp(rules.findText).test(value) ? rules.replaceText : value
+}
+
 function transformText(value: string, rules: RenameRules): string {
-  let result = value
-  if (rules.findText) {
-    result = result.split(rules.findText).join(rules.replaceText)
-  }
-  if (rules.removeText) {
-    result = result.split(rules.removeText).join('')
-  }
+  let result = applyTextReplacement(value, rules)
   if (rules.trimExtraSpaces) {
     result = result.trim().replace(/\s+/gu, ' ')
   }

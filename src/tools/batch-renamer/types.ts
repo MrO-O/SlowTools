@@ -16,9 +16,9 @@ export interface ScanProgress {
 }
 
 export interface RenameRules {
+  matchMode: 'literal' | 'wildcard'
   findText: string
   replaceText: string
-  removeText: string
   spaceMode: 'keep' | 'underscore' | 'hyphen'
   trimExtraSpaces: boolean
   prefix: string
